@@ -12,10 +12,13 @@ test_source_files := $(call find-files-in-subdirs, $(test_source_directory), "*T
 # Filter out tests that will not pass running under make.
 test_source_files := $(filter-out org/robolectric/internal/GradleManifestFactoryTest.java, $(test_source_files))
 
+# Build the command that honors the test class filter, if any.
+test_filter_command := $(if $(ROBOTEST_FILTER),grep -E "$(ROBOTEST_FILTER)",cat)
+
 # Convert the test source file paths into package names by removing ".java" extension and replacing "/" with "."
 test_class_names := $(subst /,., $(basename $(test_source_files)))
 # Remove whitespace and sort the tests in alphabetical order.
-test_class_names := $(sort $(shell echo '$(test_class_names)' | tr ' ' '\n'))
+test_class_names := $(sort $(shell echo '$(test_class_names)' | tr ' ' '\n' | $(test_filter_command)))
 
 include $(BUILD_SYSTEM)/base_rules.mk
 
@@ -50,7 +53,7 @@ copy_android_all_jars := $(call copy-many-files, $(copy_android_all_jar_pairs))
 
 # If debugging the tests was requested, set up the JVM parameters to enable it.
 debug_test_args :=
-ifdef debug_tests
+ifdef DEBUG_ROBOLECTRIC
     # The arguments to the JVM needed to debug the tests.
     # - server: wait for connection rather than connecting to a debugger
     # - transport: how to accept debugger connections (sockets)
@@ -68,10 +71,15 @@ $(LOCAL_BUILT_MODULE): private_host_jdk_tools_jar := $(HOST_JDK_TOOLS_JAR)
 $(LOCAL_BUILT_MODULE): private_android_all_dir := $(android_all_target_dir)
 $(LOCAL_BUILT_MODULE): private_classpath_jars := $(call normalize-path-list, $(classpath_jars))
 
-.PHONY: $(LOCAL_BUILT_MODULE)
+# Always re-run the tests, even if nothing has changed.
+# Until the build system has a dedicated "no cache" option, claim to write
+# a file that is never produced.
+$(LOCAL_BUILT_MODULE): private_nocache := $(LOCAL_BUILT_MODULE).nocache
+$(LOCAL_BUILT_MODULE): .KATI_IMPLICIT_OUTPUTS := $(LOCAL_BUILT_MODULE).nocache
 
 # Define the basic recipe for building this module to execute the tests.
 $(LOCAL_BUILT_MODULE): $(copy_test_resource_files) $(copy_android_all_jars) $(classpath_jars)
+	$(hide) rm -f "$(private_nocache)"
 	$(hide) $(private_java) \
 	  -Drobolectric.offline=true \
 	  -Drobolectric.dependency.dir=$(private_android_all_dir) \
