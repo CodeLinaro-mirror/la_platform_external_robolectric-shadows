@@ -9,6 +9,7 @@ LOCAL_MODULE := Robolectric_all
 LOCAL_STATIC_JAVA_LIBRARIES := \
   Robolectric_shadows_httpclient \
   Robolectric_shadows_framework \
+  Robolectric_shadows_androidx_fragment\
   Robolectric_shadows_supportv4 \
   Robolectric_shadows_multidex \
   Robolectric_robolectric \
@@ -98,10 +99,12 @@ include $(BUILD_HOST_PREBUILT)
 ###########################################
 # HACK: specify these *HOST* jars needed to execute robolectric as though they are prebuilt *TARGET* java libraries
 ###########################################
-LOCAL_PATH := $(LOCAL_PATH)/../../../
 include $(CLEAR_VARS)
 
-LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES := \
-  Robolectric_all-target:$(call java-lib-files, Robolectric_all, HOST)
+LOCAL_MODULE := Robolectric_all-target
+LOCAL_MODULE_CLASS := JAVA_LIBRARIES
+LOCAL_UNINSTALLABLE_MODULE := true
+LOCAL_BUILT_MODULE_STEM := javalib.jar
+LOCAL_PREBUILT_MODULE_FILE := $(call java-lib-files, Robolectric_all, HOST)
 
-include $(BUILD_MULTI_PREBUILT)
+include $(BUILD_PREBUILT)
