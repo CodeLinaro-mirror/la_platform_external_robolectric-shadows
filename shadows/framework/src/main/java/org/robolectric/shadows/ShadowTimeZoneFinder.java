@@ -1,17 +1,16 @@
 package org.robolectric.shadows;
 
-import static android.os.Build.VERSION_CODES.O;
+import static android.os.Build.VERSION_CODES.Q;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import libcore.util.TimeZoneFinder;
+import libcore.timezone.TimeZoneFinder;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 
-/** Shadow for {@code TimeZoneFinder}. */
-@Implements(value = TimeZoneFinder.class, minSdk = O, isInAndroidSdk = false)
+@Implements(value = TimeZoneFinder.class, minSdk = Q, isInAndroidSdk = false, looseSignatures = true)
 public class ShadowTimeZoneFinder {
 
   private static final String TZLOOKUP_PATH = "/usr/share/zoneinfo/tzlookup.xml";
