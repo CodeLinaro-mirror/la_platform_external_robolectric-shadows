@@ -16,6 +16,7 @@ import android.app.INotificationManager;
 import android.app.ISearchManager;
 import android.app.admin.IDevicePolicyManager;
 import android.app.job.IJobScheduler;
+import android.app.role.IRoleManager;
 import android.app.slice.ISliceManager;
 import android.app.trust.ITrustManager;
 import android.app.usage.IUsageStatsManager;
@@ -23,6 +24,7 @@ import android.content.Context;
 import android.content.IClipboard;
 import android.content.IRestrictionsManager;
 import android.content.pm.IShortcutService;
+import android.hardware.display.IColorDisplayManager;
 import android.hardware.fingerprint.IFingerprintService;
 import android.hardware.input.IInputManager;
 import android.hardware.usb.IUsbManager;
@@ -188,6 +190,10 @@ public class ShadowServiceManager {
     if (RuntimeEnvironment.getApiLevel() >= Q) {
       map.put(Context.NOTIFICATION_SERVICE,
           createBinder(INotificationManager.class, "android.app.INotificationManager"));
+      map.put(Context.COLOR_DISPLAY_SERVICE, createBinder(IColorDisplayManager.class,
+          "android.hardware.display.ColorDisplayManager"));
+      map.put(Context.ROLE_SERVICE,
+              createBinder(IRoleManager.class, "android.app.role.IRoleManager"));
     }
     // END-INTERNAL
     SERVICES = Collections.unmodifiableMap(map);
