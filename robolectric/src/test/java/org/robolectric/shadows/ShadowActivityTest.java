@@ -18,6 +18,7 @@ import static org.robolectric.Robolectric.setupActivity;
 import static org.robolectric.RuntimeEnvironment.application;
 import static org.robolectric.Shadows.shadowOf;
 
+import android.Manifest;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.ActivityOptions;
@@ -48,6 +49,8 @@ import android.view.Window;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.SearchView;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -55,14 +58,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.R;
 import org.robolectric.Robolectric;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadow.api.Shadow;
 import org.robolectric.util.TestRunnable;
 
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class ShadowActivityTest {
   private Activity activity;
 
@@ -295,7 +296,8 @@ public class ShadowActivityTest {
 
   @Test
   public void shouldRetrievePackageNameFromTheManifest() throws Exception {
-    assertThat(Robolectric.setupActivity(Activity.class).getPackageName()).isEqualTo(RuntimeEnvironment.application.getPackageName());
+    assertThat(Robolectric.setupActivity(Activity.class).getPackageName())
+        .isEqualTo(ApplicationProvider.getApplicationContext().getPackageName());
   }
 
   @Test
@@ -843,7 +845,9 @@ public class ShadowActivityTest {
   public void shouldCallActivityLifecycleCallbacks() {
     final List<String> transcript = new ArrayList<>();
     final ActivityController<Activity> controller = buildActivity(Activity.class);
-    RuntimeEnvironment.application.registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks(transcript));
+    Application applicationContext = ApplicationProvider.getApplicationContext();
+    applicationContext.registerActivityLifecycleCallbacks(
+        new ActivityLifecycleCallbacks(transcript));
 
     controller.create();
     assertThat(transcript).containsExactly("onActivityCreated");
@@ -916,6 +920,23 @@ public class ShadowActivityTest {
 
     activity.stopLockTask();
     assertThat(shadowActivity.isLockTask()).isFalse();
+  }
+
+  @Test
+  @Config(minSdk = M)
+  public void getPermission_shouldReturnRequestedPermissions() {
+    // GIVEN
+    String[] permission = {Manifest.permission.CAMERA};
+    int requestCode = 1007;
+    Activity activity = Robolectric.setupActivity(Activity.class);
+
+    // WHEN
+    activity.requestPermissions(permission, requestCode);
+
+    // THEN
+    ShadowActivity.PermissionsRequest request = shadowOf(activity).getLastRequestedPermission();
+    assertThat(request.requestCode).isEqualTo(requestCode);
+    assertThat(request.requestedPermissions).isEqualTo(permission);
   }
 
   /////////////////////////////

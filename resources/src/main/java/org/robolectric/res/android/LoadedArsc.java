@@ -39,8 +39,8 @@ import org.robolectric.res.android.ResourceTypes.ResTable_type;
 import org.robolectric.res.android.ResourceTypes.ResTable_typeSpec;
 import org.robolectric.res.android.ResourceTypes.Res_value;
 
-// transliterated from https://android.googlesource.com/platform/frameworks/base/+/android-9.0.0_r3/libs/androidfw/include/androidfw/LoadedArsc.h
-// and https://android.googlesource.com/platform/frameworks/base/+/android-9.0.0_r3/libs/androidfw/LoadedArsc.cpp
+// transliterated from https://android.googlesource.com/platform/frameworks/base/+/android-9.0.0_r12/libs/androidfw/include/androidfw/LoadedArsc.h
+// and https://android.googlesource.com/platform/frameworks/base/+/android-9.0.0_r12/libs/androidfw/LoadedArsc.cpp
 public class LoadedArsc {
 
   //#ifndef LOADEDARSC_H_
@@ -837,7 +837,7 @@ public class LoadedArsc {
     }
 
     void ForEachTypeSpec(TypeSpecFunc f) {
-      for (int i = 0; i < type_specs_.size(); i++) {
+      for (Integer i : type_specs_.keySet()) {
         TypeSpec ptr = type_specs_.get(i);
         if (ptr != null) {
           byte type_id = ptr.type_spec.id;

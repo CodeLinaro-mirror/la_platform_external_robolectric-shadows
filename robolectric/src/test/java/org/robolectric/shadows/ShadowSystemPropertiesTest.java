@@ -3,12 +3,12 @@ package org.robolectric.shadows;
 import static com.google.common.truth.Truth.assertThat;
 
 import android.os.SystemProperties;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class ShadowSystemPropertiesTest {
 
   @Test
@@ -106,5 +106,25 @@ public class ShadowSystemPropertiesTest {
     assertThat(SystemProperties.get("newkey")).isEqualTo("val");
     ShadowSystemProperties.override("newkey", null);
     assertThat(SystemProperties.get("newkey")).isEqualTo("");
+  }
+
+  @Test
+  public void getBoolean_returnsTrue_forAllSupportedValues() {
+    assertThat(SystemProperties.getBoolean("newkey", false)).isFalse();
+
+    SystemProperties.set("newkey", "1");
+    assertThat(SystemProperties.getBoolean("newkey", false)).isTrue();
+
+    SystemProperties.set("newkey", "y");
+    assertThat(SystemProperties.getBoolean("newkey", false)).isTrue();
+
+    SystemProperties.set("newkey", "on");
+    assertThat(SystemProperties.getBoolean("newkey", false)).isTrue();
+
+    SystemProperties.set("newkey", "yes");
+    assertThat(SystemProperties.getBoolean("newkey", false)).isTrue();
+
+    SystemProperties.set("newkey", "true");
+    assertThat(SystemProperties.getBoolean("newkey", false)).isTrue();
   }
 }

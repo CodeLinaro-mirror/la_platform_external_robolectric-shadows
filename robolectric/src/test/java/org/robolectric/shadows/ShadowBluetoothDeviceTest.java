@@ -10,13 +10,13 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCallback;
 import android.os.ParcelUuid;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class ShadowBluetoothDeviceTest {
 
   private static final String MOCK_MAC_ADDRESS = "00:11:22:33:AA:BB";
@@ -95,7 +95,7 @@ public class ShadowBluetoothDeviceTest {
     BluetoothDevice bluetoothDevice = ShadowBluetoothDevice.newInstance(MOCK_MAC_ADDRESS);
     assertThat(
             bluetoothDevice.connectGatt(
-                RuntimeEnvironment.application, false, new BluetoothGattCallback() {}))
+                ApplicationProvider.getApplicationContext(), false, new BluetoothGattCallback() {}))
         .isNotNull();
   }
 }

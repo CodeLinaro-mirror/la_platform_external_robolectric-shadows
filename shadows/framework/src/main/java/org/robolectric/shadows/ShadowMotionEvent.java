@@ -318,7 +318,7 @@ public class ShadowMotionEvent {
       int pointerCount,
       PointerProperties[] pointerPropertiesObjArray,
       PointerCoords[] pointerCoordsObjArray) {
-    return
+        return
         nativeInitialize(
             nativePtr,
             deviceId,
@@ -646,12 +646,14 @@ public class ShadowMotionEvent {
 
   @Implementation(maxSdk = KITKAT_WATCH)
   @HiddenApi
-  protected static void nativeSetSource(int nativePtr, int source) {
+  protected static int nativeSetSource(int nativePtr, int source) {
     nativeSetSource((long) nativePtr, source);
+    return 0;
   }
 
   @Implementation(minSdk = LOLLIPOP)
   @HiddenApi
+  @SuppressWarnings("robolectric.ShadowReturnTypeMismatch")
   protected static void nativeSetSource(long nativePtr, int source) {
     NativeInput.MotionEvent event = getNativeMotionEvent(nativePtr);
     event.setSource(source);
