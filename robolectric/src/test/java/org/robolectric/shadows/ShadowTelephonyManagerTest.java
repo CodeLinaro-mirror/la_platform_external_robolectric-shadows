@@ -34,16 +34,16 @@ import android.telephony.PhoneStateListener;
 import android.telephony.ServiceState;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class ShadowTelephonyManagerTest {
 
   private TelephonyManager telephonyManager;
@@ -112,10 +112,31 @@ public class ShadowTelephonyManagerTest {
     assertEquals("SomeSimOperatorName", telephonyManager.getSimOperatorName());
   }
 
+  @Test(expected = SecurityException.class)
+  public void getSimSerialNumber_shouldThrowSecurityExceptionWhenReadPhoneStatePermissionNotGranted()
+      throws Exception {
+    shadowTelephonyManager.setReadPhoneStatePermission(false);
+    telephonyManager.getSimSerialNumber();
+  }
+
+  @Test
+  public void shouldGetSimSerialNumber() {
+    shadowTelephonyManager.setSimSerialNumber("SomeSerialNumber");
+    assertEquals("SomeSerialNumber", telephonyManager.getSimSerialNumber());
+  }
+
   @Test
   public void shouldGiveNetworkType() {
     shadowTelephonyManager.setNetworkType(TelephonyManager.NETWORK_TYPE_CDMA);
     assertEquals(TelephonyManager.NETWORK_TYPE_CDMA, telephonyManager.getNetworkType());
+  }
+
+  @Test
+  @Config(minSdk = N)
+  public void shouldGiveVoiceNetworkType() {
+    shadowTelephonyManager.setVoiceNetworkType(TelephonyManager.NETWORK_TYPE_CDMA);
+    assertThat(telephonyManager.getVoiceNetworkType())
+        .isEqualTo(TelephonyManager.NETWORK_TYPE_CDMA);
   }
 
   @Test
@@ -245,7 +266,7 @@ public class ShadowTelephonyManagerTest {
   public void shouldGiveVoiceVibrationEnabled() {
     PhoneAccountHandle phoneAccountHandle =
         new PhoneAccountHandle(
-            new ComponentName(RuntimeEnvironment.application, Object.class), "handle");
+            new ComponentName(ApplicationProvider.getApplicationContext(), Object.class), "handle");
 
     shadowTelephonyManager.setVoicemailVibrationEnabled(phoneAccountHandle, true);
 
@@ -257,7 +278,7 @@ public class ShadowTelephonyManagerTest {
   public void shouldGiveVoicemailRingtoneUri() {
     PhoneAccountHandle phoneAccountHandle =
         new PhoneAccountHandle(
-            new ComponentName(RuntimeEnvironment.application, Object.class), "handle");
+            new ComponentName(ApplicationProvider.getApplicationContext(), Object.class), "handle");
     Uri ringtoneUri = Uri.fromParts("file", "ringtone.mp3", /* fragment = */ null);
 
     shadowTelephonyManager.setVoicemailRingtoneUri(phoneAccountHandle, ringtoneUri);
@@ -270,7 +291,7 @@ public class ShadowTelephonyManagerTest {
   public void shouldSetVoicemailRingtoneUri() {
     PhoneAccountHandle phoneAccountHandle =
         new PhoneAccountHandle(
-            new ComponentName(RuntimeEnvironment.application, Object.class), "handle");
+            new ComponentName(ApplicationProvider.getApplicationContext(), Object.class), "handle");
     Uri ringtoneUri = Uri.fromParts("file", "ringtone.mp3", /* fragment = */ null);
 
     // Note: Using the real manager to set, instead of the shadow.
@@ -284,7 +305,7 @@ public class ShadowTelephonyManagerTest {
   public void shouldCreateForPhoneAccountHandle() {
     PhoneAccountHandle phoneAccountHandle =
         new PhoneAccountHandle(
-            new ComponentName(RuntimeEnvironment.application, Object.class), "handle");
+            new ComponentName(ApplicationProvider.getApplicationContext(), Object.class), "handle");
     TelephonyManager mockTelephonyManager = mock(TelephonyManager.class);
 
     shadowTelephonyManager.setTelephonyManagerForHandle(phoneAccountHandle, mockTelephonyManager);
@@ -406,5 +427,13 @@ public class ShadowTelephonyManagerTest {
     shadowTelephonyManager.resetSimCountryIsos();
 
     assertThat(shadowTelephonyManager.getSimCountryIso()).isEmpty();
+  }
+
+  @Test
+  public void shouldSetSubscriberId() {
+    String subscriberId = "123451234512345";
+    shadowTelephonyManager.setSubscriberId(subscriberId);
+
+    assertThat(shadowTelephonyManager.getSubscriberId()).isEqualTo(subscriberId);
   }
 }

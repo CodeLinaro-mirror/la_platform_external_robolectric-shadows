@@ -35,10 +35,12 @@ public class AndroidManifestTest {
     assertThat(config.getContentProviders().get(0).getName())
         .isEqualTo("org.robolectric.tester.FullyQualifiedClassName");
     assertThat(config.getContentProviders().get(0).getAuthorities()).isEqualTo("org.robolectric.authority1");
+    assertThat(config.getContentProviders().get(0).isEnabled()).isTrue();
 
     assertThat(config.getContentProviders().get(1).getName())
         .isEqualTo("org.robolectric.tester.PartiallyQualifiedClassName");
     assertThat(config.getContentProviders().get(1).getAuthorities()).isEqualTo("org.robolectric.authority2");
+    assertThat(config.getContentProviders().get(1).isEnabled()).isFalse();
   }
 
   @Test
@@ -92,6 +94,7 @@ public class AndroidManifestTest {
     assertThat(config.getBroadcastReceivers().get(4).getName())
         .isEqualTo("org.robolectric.test.ConfigTestReceiver");
     assertThat(config.getBroadcastReceivers().get(4).getActions()).contains("org.robolectric.ACTION_DOT_SUBPACKAGE");
+    assertThat(config.getBroadcastReceivers().get(4).isEnabled()).isFalse();
 
     assertThat(config.getBroadcastReceivers().get(5).getName()).isEqualTo("com.foo.Receiver");
     assertThat(config.getBroadcastReceivers().get(5).getActions()).contains("org.robolectric.ACTION_DIFFERENT_PACKAGE");
@@ -126,6 +129,9 @@ public class AndroidManifestTest {
     assertThat(config.getServiceData("com.bar.ServiceWithoutIntentFilter").getClassName()).isEqualTo("com.bar.ServiceWithoutIntentFilter");
     assertThat(config.getServiceData("com.foo.Service").getPermission())
         .isEqualTo("com.foo.Permission");
+
+    assertThat(config.getServiceData("com.foo.Service").isEnabled()).isTrue();
+    assertThat(config.getServiceData("com.bar.ServiceWithoutIntentFilter").isEnabled()).isFalse();
   }
 
   @Test
@@ -200,10 +206,10 @@ public class AndroidManifestTest {
   @Test
   public void shouldReadTargetSdkVersionFromAndroidManifestOrDefaultToMin() throws Exception {
     assertThat(
-        newConfigWith(
-            "targetsdk42minsdk6.xml",
-            "android:targetSdkVersion=\"42\" android:minSdkVersion=\"7\"")
-            .getTargetSdkVersion())
+            newConfigWith(
+                    "targetsdk42minsdk6.xml",
+                    "android:targetSdkVersion=\"42\" android:minSdkVersion=\"7\"")
+                .getTargetSdkVersion())
         .isEqualTo(42);
     assertThat(newConfigWith("minsdk7.xml", "android:minSdkVersion=\"7\"").getTargetSdkVersion())
         .isEqualTo(7);
@@ -227,8 +233,8 @@ public class AndroidManifestTest {
   @Test
   public void shouldReadTargetSDKVersionOPreview() throws Exception {
     assertThat(
-        newConfigWith("TestAndroidManifestForPreview.xml", "android:targetSdkVersion=\"O\"")
-            .getTargetSdkVersion())
+            newConfigWith("TestAndroidManifestForPreview.xml", "android:targetSdkVersion=\"O\"")
+                .getTargetSdkVersion())
         .isEqualTo(26);
   }
 
@@ -541,7 +547,7 @@ public class AndroidManifestTest {
         "    <uses-sdk " + usesSdkAttrs + "/>\n" +
         "</manifest>\n";
     File f = temporaryFolder.newFile(fileName);
-    Files.write(contents, f, Charsets.UTF_8);
+    Files.asCharSink(f, Charsets.UTF_8).write(contents);
     return new AndroidManifest(Fs.newFile(f), null, null);
   }
 

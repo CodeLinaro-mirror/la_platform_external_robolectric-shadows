@@ -4,20 +4,22 @@ import static android.os.Build.VERSION_CODES.O;
 import static com.google.common.truth.Truth.assertThat;
 import static org.robolectric.Shadows.shadowOf;
 
+import android.app.Application;
 import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.AudioPlaybackConfiguration;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class ShadowAudioManagerTest {
-  private final AudioManager audioManager = new AudioManager(RuntimeEnvironment.application);
+  private final AudioManager audioManager =
+      new AudioManager((Application) ApplicationProvider.getApplicationContext());
   private final AudioManager.OnAudioFocusChangeListener listener = new AudioManager.OnAudioFocusChangeListener() {
     @Override
     public void onAudioFocusChange(int focusChange) {
@@ -37,12 +39,12 @@ public class ShadowAudioManagerTest {
   @Test
   public void requestAudioFocus_shouldReturnTheSpecifiedValue() {
     int value = audioManager.requestAudioFocus(listener, 999, 888);
-    assertThat(AudioManager.AUDIOFOCUS_REQUEST_GRANTED).isEqualTo(value);
+    assertThat(value).isEqualTo(AudioManager.AUDIOFOCUS_REQUEST_GRANTED);
 
     shadowOf(audioManager).setNextFocusRequestResponse(AudioManager.AUDIOFOCUS_REQUEST_FAILED);
 
     value = audioManager.requestAudioFocus(listener, 999, 888);
-    assertThat(AudioManager.AUDIOFOCUS_REQUEST_FAILED).isEqualTo(value);
+    assertThat(value).isEqualTo(AudioManager.AUDIOFOCUS_REQUEST_FAILED);
   }
 
   @Test
@@ -70,14 +72,14 @@ public class ShadowAudioManagerTest {
     int value =
         audioManager.requestAudioFocus(
             new android.media.AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN).build());
-    assertThat(AudioManager.AUDIOFOCUS_REQUEST_GRANTED).isEqualTo(value);
+    assertThat(value).isEqualTo(AudioManager.AUDIOFOCUS_REQUEST_GRANTED);
 
     shadowOf(audioManager).setNextFocusRequestResponse(AudioManager.AUDIOFOCUS_REQUEST_FAILED);
 
     value =
         audioManager.requestAudioFocus(
             new android.media.AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN).build());
-    assertThat(AudioManager.AUDIOFOCUS_REQUEST_FAILED).isEqualTo(value);
+    assertThat(value).isEqualTo(AudioManager.AUDIOFOCUS_REQUEST_FAILED);
   }
 
   @Test
@@ -272,7 +274,7 @@ public class ShadowAudioManagerTest {
         .setActivePlaybackConfigurationsFor(
             Arrays.asList(
                 new AudioAttributes[] {
-                    movieAttribute, musicAttribute,
+                  movieAttribute, musicAttribute,
                 }));
     List<AudioPlaybackConfiguration> playbackConfigurations =
         audioManager.getActivePlaybackConfigurations();

@@ -13,16 +13,17 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Icon;
 import android.text.SpannableString;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.R;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class ShadowNotificationBuilderTest {
-  private final Notification.Builder builder = new Notification.Builder(RuntimeEnvironment.application);
+  private final Notification.Builder builder =
+      new Notification.Builder(ApplicationProvider.getApplicationContext());
 
   @Test
   public void build_setsContentTitleOnNotification() throws Exception {
@@ -210,7 +211,8 @@ public class ShadowNotificationBuilderTest {
   @Test
   @Config(minSdk = JELLY_BEAN_MR2)
   public void build_addsActionToNotification() throws Exception {
-    PendingIntent action = PendingIntent.getBroadcast(RuntimeEnvironment.application, 0, null, 0);
+    PendingIntent action =
+        PendingIntent.getBroadcast(ApplicationProvider.getApplicationContext(), 0, null, 0);
     Notification notification = builder.addAction(0, "Action", action).build();
 
     assertThat(notification.actions[0].actionIntent).isEqualTo(action);
@@ -233,7 +235,9 @@ public class ShadowNotificationBuilderTest {
   @Test
   @Config(minSdk = M)
   public void withBigPictureStyle() {
-    Bitmap bigPicture = BitmapFactory.decodeResource(RuntimeEnvironment.application.getResources(), R.drawable.an_image);
+    Bitmap bigPicture =
+        BitmapFactory.decodeResource(
+            ApplicationProvider.getApplicationContext().getResources(), R.drawable.an_image);
 
     Icon bigLargeIcon = Icon.createWithBitmap(bigPicture);
     Notification notification = builder.setStyle(new Notification.BigPictureStyle(builder)

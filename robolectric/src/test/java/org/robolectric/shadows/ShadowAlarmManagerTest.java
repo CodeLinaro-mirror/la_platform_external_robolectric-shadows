@@ -19,17 +19,17 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build.VERSION_CODES;
 import android.os.Handler;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Date;
 import java.util.TimeZone;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class ShadowAlarmManagerTest {
 
   private Context context;
@@ -39,7 +39,7 @@ public class ShadowAlarmManagerTest {
 
   @Before
   public void setUp() {
-    context = RuntimeEnvironment.application;
+    context = ApplicationProvider.getApplicationContext();
     alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
     shadowAlarmManager = shadowOf(alarmManager);
     activity = Robolectric.setupActivity(Activity.class);
@@ -286,12 +286,10 @@ public class ShadowAlarmManagerTest {
   @Test
   public void schedule_useRequestCodeToMatchExistingPendingIntents() throws Exception {
     Intent intent = new Intent("ACTION!");
-    PendingIntent pI = PendingIntent.getService(RuntimeEnvironment.application, 1, intent, 0);
-    AlarmManager alarmManager =
-        (AlarmManager) RuntimeEnvironment.application.getSystemService(Context.ALARM_SERVICE);
+    PendingIntent pI = PendingIntent.getService(context, 1, intent, 0);
     alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, 10, pI);
 
-    PendingIntent pI2 = PendingIntent.getService(RuntimeEnvironment.application, 2, intent, 0);
+    PendingIntent pI2 = PendingIntent.getService(context, 2, intent, 0);
     alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, 10, pI2);
 
     assertThat(shadowAlarmManager.getScheduledAlarms()).hasSize(2);
@@ -300,12 +298,10 @@ public class ShadowAlarmManagerTest {
   @Test
   public void cancel_useRequestCodeToMatchExistingPendingIntents() throws Exception {
     Intent intent = new Intent("ACTION!");
-    PendingIntent pI = PendingIntent.getService(RuntimeEnvironment.application, 1, intent, 0);
-    AlarmManager alarmManager =
-        (AlarmManager) RuntimeEnvironment.application.getSystemService(Context.ALARM_SERVICE);
+    PendingIntent pI = PendingIntent.getService(context, 1, intent, 0);
     alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, 10, pI);
 
-    PendingIntent pI2 = PendingIntent.getService(RuntimeEnvironment.application, 2, intent, 0);
+    PendingIntent pI2 = PendingIntent.getService(context, 2, intent, 0);
     alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, 10, pI2);
 
     assertThat(shadowAlarmManager.getScheduledAlarms()).hasSize(2);
@@ -319,7 +315,7 @@ public class ShadowAlarmManagerTest {
   @Config(minSdk = N)
   public void cancel_removesMatchingListeners() {
     Intent intent = new Intent("ACTION!");
-    PendingIntent pI = PendingIntent.getService(RuntimeEnvironment.application, 1, intent, 0);
+    PendingIntent pI = PendingIntent.getService(context, 1, intent, 0);
     OnAlarmListener listener1 = () -> {};
     OnAlarmListener listener2 = () -> {};
     Handler handler = new Handler();

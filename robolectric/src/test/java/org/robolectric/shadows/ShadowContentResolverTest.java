@@ -35,6 +35,8 @@ import android.os.CancellationSignal;
 import android.os.Handler;
 import android.os.ParcelFileDescriptor;
 import android.os.RemoteException;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileDescriptor;
@@ -43,6 +45,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Before;
@@ -50,12 +53,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.robolectric.Robolectric;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 import org.robolectric.fakes.BaseCursor;
 
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class ShadowContentResolverTest {
   private static final String AUTHORITY = "org.robolectric";
 
@@ -67,7 +69,7 @@ public class ShadowContentResolverTest {
 
   @Before
   public void setUp() {
-    contentResolver = RuntimeEnvironment.application.getContentResolver();
+    contentResolver = ApplicationProvider.getApplicationContext().getContentResolver();
     shadowContentResolver = shadowOf(contentResolver);
     uri21 = Uri.parse(EXTERNAL_CONTENT_URI.toString() + "/21");
     uri22 = Uri.parse(EXTERNAL_CONTENT_URI.toString() + "/22");
@@ -286,11 +288,13 @@ public class ShadowContentResolverTest {
     ProviderInfo providerInfo0 = new ProviderInfo();
     providerInfo0.authority = "the-authority"; // todo: support multiple authorities
     providerInfo0.grantUriPermissions = true;
-    mock.attachInfo(RuntimeEnvironment.application, providerInfo0);
+    mock.attachInfo(ApplicationProvider.getApplicationContext(), providerInfo0);
     mock.onCreate();
 
     ArgumentCaptor<ProviderInfo> captor = ArgumentCaptor.forClass(ProviderInfo.class);
-    verify(mock).attachInfo(same(RuntimeEnvironment.application), captor.capture());
+    verify(mock)
+        .attachInfo(
+            same((Application) ApplicationProvider.getApplicationContext()), captor.capture());
     ProviderInfo providerInfo = captor.getValue();
 
     assertThat(providerInfo.authority).isEqualTo("the-authority");
@@ -411,14 +415,13 @@ public class ShadowContentResolverTest {
     });
 
     final Uri uri = Uri.parse("content://registeredProvider/path");
-    contentResolver.applyBatch("registeredProvider", new ArrayList<ContentProviderOperation>() {
-      {
-        add(ContentProviderOperation.newInsert(uri).withValue("a", "b").build());
-        add(ContentProviderOperation.newUpdate(uri).withValue("a", "b").build());
-        add(ContentProviderOperation.newDelete(uri).build());
-        add(ContentProviderOperation.newAssertQuery(uri).withValue("a", "b").build());
-      }
-    });
+    List<ContentProviderOperation> contentProviderOperations =
+        Arrays.asList(
+            ContentProviderOperation.newInsert(uri).withValue("a", "b").build(),
+            ContentProviderOperation.newUpdate(uri).withValue("a", "b").build(),
+            ContentProviderOperation.newDelete(uri).build(),
+            ContentProviderOperation.newAssertQuery(uri).withValue("a", "b").build());
+    contentResolver.applyBatch("registeredProvider", new ArrayList<>(contentProviderOperations));
 
     assertThat(operations).containsExactly("insert", "update", "delete", "query");
   }
@@ -674,7 +677,7 @@ public class ShadowContentResolverTest {
     contentResolver.notifyChange(EXTERNAL_CONTENT_URI, null);
     assertThat(co.changed).isTrue();
 
-    scr.clearContentObservers();
+    contentResolver.unregisterContentObserver(co);
     assertThat(scr.getContentObservers(EXTERNAL_CONTENT_URI)).isEmpty();
   }
 
@@ -791,12 +794,12 @@ public class ShadowContentResolverTest {
   public void getSyncAdapterTypes() {
     SyncAdapterType[] syncAdapterTypes =
         new SyncAdapterType[] {
-            new SyncAdapterType(
-                "authority1", "accountType1", /* userVisible=*/ false, /* supportsUploading=*/ false),
-            new SyncAdapterType(
-                "authority2", "accountType2", /* userVisible=*/ true, /* supportsUploading=*/ false),
-            new SyncAdapterType(
-                "authority3", "accountType3", /* userVisible=*/ true, /* supportsUploading=*/ true)
+          new SyncAdapterType(
+              "authority1", "accountType1", /* userVisible=*/ false, /* supportsUploading=*/ false),
+          new SyncAdapterType(
+              "authority2", "accountType2", /* userVisible=*/ true, /* supportsUploading=*/ false),
+          new SyncAdapterType(
+              "authority3", "accountType3", /* userVisible=*/ true, /* supportsUploading=*/ true)
         };
 
     ShadowContentResolver.setSyncAdapterTypes(syncAdapterTypes);
@@ -874,7 +877,8 @@ public class ShadowContentResolverTest {
 
     @Override
     public ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
-      final File file = new File(RuntimeEnvironment.application.getFilesDir(), "test_file");
+      final File file =
+          new File(ApplicationProvider.getApplicationContext().getFilesDir(), "test_file");
       try {
         file.createNewFile();
       } catch (IOException e) {
