@@ -16,10 +16,10 @@ import java.util.List;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.util.TestRunnerWithManifest;
+import org.robolectric.RobolectricTestRunner;
 
 /** Tests for {@link FragmentController} */
-@RunWith(TestRunnerWithManifest.class)
+@RunWith(RobolectricTestRunner.class)
 public class FragmentControllerTest {
 
   @After

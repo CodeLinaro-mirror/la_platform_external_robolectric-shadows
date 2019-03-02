@@ -4,6 +4,7 @@ import static android.os.Build.VERSION_CODES.JELLY_BEAN;
 import static android.os.Build.VERSION_CODES.JELLY_BEAN_MR1;
 import static android.os.Build.VERSION_CODES.LOLLIPOP;
 import static android.os.Build.VERSION_CODES.M;
+import static android.os.Build.VERSION_CODES.P;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -31,24 +32,24 @@ public class ShadowSettings {
     private static final Map<ContentResolver, Map<String, String>> dataMap = new WeakHashMap<>();
 
     @Implementation(minSdk = JELLY_BEAN_MR1)
-    public static boolean putStringForUser(ContentResolver cr, String name, String value,
+    protected static boolean putStringForUser(ContentResolver cr, String name, String value,
         int userHandle) {
       return putString(cr, name, value);
     }
 
     @Implementation(minSdk = JELLY_BEAN_MR1)
-    public static String getStringForUser(ContentResolver cr, String name, int userHandle) {
+    protected static String getStringForUser(ContentResolver cr, String name, int userHandle) {
       return getString(cr, name);
     }
 
     @Implementation
-    public static boolean putString(ContentResolver cr, String name, String value) {
+    protected static boolean putString(ContentResolver cr, String name, String value) {
       get(cr).put(name, value);
       return true;
     }
 
     @Implementation
-    public static String getString(ContentResolver cr, String name) {
+    protected static String getString(ContentResolver cr, String name) {
       return get(cr).get(name);
     }
 
@@ -62,32 +63,29 @@ public class ShadowSettings {
     }
   }
 
-  /**
-   * Shadow for {@link Settings.Secure}
-   */
   @Implements(value = Settings.Secure.class)
   public static class ShadowSecure {
     private static final Map<ContentResolver, Map<String, String>> dataMap = new WeakHashMap<>();
 
     @Implementation(minSdk = JELLY_BEAN_MR1)
-    public static boolean putStringForUser(ContentResolver cr, String name, String value,
+    protected static boolean putStringForUser(ContentResolver cr, String name, String value,
         int userHandle) {
       return putString(cr, name, value);
     }
 
     @Implementation(minSdk = JELLY_BEAN_MR1)
-    public static String getStringForUser(ContentResolver cr, String name, int userHandle) {
+    protected static String getStringForUser(ContentResolver cr, String name, int userHandle) {
       return getString(cr, name);
     }
 
     @Implementation
-    public static boolean putString(ContentResolver cr, String name, String value) {
+    protected static boolean putString(ContentResolver cr, String name, String value) {
       get(cr).put(name, value);
       return true;
     }
 
     @Implementation
-    public static String getString(ContentResolver cr, String name) {
+    protected static String getString(ContentResolver cr, String name) {
       return get(cr).get(name);
     }
 
@@ -135,7 +133,8 @@ public class ShadowSettings {
     @Implementation
     protected static boolean putInt(ContentResolver resolver, String name, int value) {
       if (Settings.Secure.LOCATION_MODE.equals(name)
-          && RuntimeEnvironment.getApiLevel() >= LOLLIPOP) {
+          && RuntimeEnvironment.getApiLevel() >= LOLLIPOP
+          && RuntimeEnvironment.getApiLevel() <= P) {
         // Map LOCATION_MODE to underlying location provider storage API
         return Shadow.directlyOn(
             Settings.Secure.class,
@@ -155,7 +154,8 @@ public class ShadowSettings {
     @Implementation
     protected static int getInt(ContentResolver resolver, String name) {
       if (Settings.Secure.LOCATION_MODE.equals(name)
-          && RuntimeEnvironment.getApiLevel() >= LOLLIPOP) {
+          && RuntimeEnvironment.getApiLevel() >= LOLLIPOP
+          && RuntimeEnvironment.getApiLevel() <= P) {
         // Map from to underlying location provider storage API to location mode
         return Shadow.directlyOn(
             Settings.Secure.class,
@@ -174,7 +174,8 @@ public class ShadowSettings {
     @Implementation
     protected static int getInt(ContentResolver resolver, String name, int def) {
       if (Settings.Secure.LOCATION_MODE.equals(name)
-          && RuntimeEnvironment.getApiLevel() >= LOLLIPOP) {
+          && RuntimeEnvironment.getApiLevel() >= LOLLIPOP
+          && RuntimeEnvironment.getApiLevel() <= P) {
         // Map from to underlying location provider storage API to location mode
         return Shadow.directlyOn(
             Settings.Secure.class,
@@ -192,32 +193,29 @@ public class ShadowSettings {
     }
   }
 
-  /**
-   * Shadow for {@link Settings.Global}
-   */
   @Implements(value = Settings.Global.class, minSdk = JELLY_BEAN_MR1)
   public static class ShadowGlobal {
     private static final Map<ContentResolver, Map<String, String>> dataMap = new WeakHashMap<>();
 
     @Implementation(minSdk = JELLY_BEAN_MR1)
-    public static boolean putStringForUser(ContentResolver cr, String name, String value,
+    protected static boolean putStringForUser(ContentResolver cr, String name, String value,
         int userHandle) {
       return putString(cr, name, value);
     }
 
     @Implementation(minSdk = JELLY_BEAN_MR1)
-    public static String getStringForUser(ContentResolver cr, String name, int userHandle) {
+    protected static String getStringForUser(ContentResolver cr, String name, int userHandle) {
       return getString(cr, name);
     }
 
     @Implementation
-    public static boolean putString(ContentResolver cr, String name, String value) {
+    protected static boolean putString(ContentResolver cr, String name, String value) {
       get(cr).put(name, value);
       return true;
     }
 
     @Implementation
-    public static String getString(ContentResolver cr, String name) {
+    protected static String getString(ContentResolver cr, String name) {
       return get(cr).get(name);
     }
 
@@ -237,7 +235,14 @@ public class ShadowSettings {
    * @param isAirplaneMode new status for airplane mode
    */
   public static void setAirplaneMode(boolean isAirplaneMode) {
-    Settings.System.putInt(RuntimeEnvironment.application.getContentResolver(), Settings.System.AIRPLANE_MODE_ON, isAirplaneMode ? 1 : 0);
+    Settings.Global.putInt(
+        RuntimeEnvironment.application.getContentResolver(),
+        Settings.Global.AIRPLANE_MODE_ON,
+        isAirplaneMode ? 1 : 0);
+    Settings.System.putInt(
+        RuntimeEnvironment.application.getContentResolver(),
+        Settings.System.AIRPLANE_MODE_ON,
+        isAirplaneMode ? 1 : 0);
   }
 
   /**
@@ -246,7 +251,10 @@ public class ShadowSettings {
    * @param isOn new status for wifi mode
    */
   public static void setWifiOn(boolean isOn) {
-    Settings.Secure.putInt(RuntimeEnvironment.application.getContentResolver(), Settings.Secure.WIFI_ON, isOn ? 1 : 0);
+    Settings.Global.putInt(
+        RuntimeEnvironment.application.getContentResolver(), Settings.Global.WIFI_ON, isOn ? 1 : 0);
+    Settings.System.putInt(
+        RuntimeEnvironment.application.getContentResolver(), Settings.System.WIFI_ON, isOn ? 1 : 0);
   }
 
   /**

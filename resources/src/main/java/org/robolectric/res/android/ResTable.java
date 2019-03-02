@@ -46,8 +46,8 @@ import org.robolectric.res.android.ResourceTypes.ResTable_type;
 import org.robolectric.res.android.ResourceTypes.ResTable_typeSpec;
 import org.robolectric.res.android.ResourceTypes.Res_value;
 
-// transliterated from https://android.googlesource.com/platform/frameworks/base/+/android-9.0.0_r3/libs/androidfw/ResourceTypes.cpp
-//   and https://android.googlesource.com/platform/frameworks/base/+/android-9.0.0_r3/include/androidfw/ResourceTypes.h
+// transliterated from https://android.googlesource.com/platform/frameworks/base/+/android-9.0.0_r12/libs/androidfw/ResourceTypes.cpp
+//   and https://android.googlesource.com/platform/frameworks/base/+/android-9.0.0_r12/include/androidfw/ResourceTypes.h
 @SuppressWarnings("NewApi")
 public class ResTable {
 
@@ -2570,12 +2570,13 @@ public class ResTable {
     // Gets cleared whenever the parameters/configuration changes.
     // These are stored here in a parallel structure because the data in `types` may
     // be shared by other ResTable's (framework resources are shared this way).
-    ByteBucketArray<TypeCacheEntry> typeCacheEntries = new ByteBucketArray<TypeCacheEntry>() {
-      @Override
-      TypeCacheEntry newInstance() {
-        return new TypeCacheEntry();
-      }
-    };
+    ByteBucketArray<TypeCacheEntry> typeCacheEntries =
+        new ByteBucketArray<TypeCacheEntry>(new TypeCacheEntry()) {
+          @Override
+          TypeCacheEntry newInstance() {
+            return new TypeCacheEntry();
+          }
+        };
 
     // The table mapping dynamic references to resolved references for
     // this package group.

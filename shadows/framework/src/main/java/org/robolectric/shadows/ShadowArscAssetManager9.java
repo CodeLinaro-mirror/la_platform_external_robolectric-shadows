@@ -1,8 +1,9 @@
 package org.robolectric.shadows;
 
-// transliterated from https://android.googlesource.com/platform/frameworks/base/+/android-9.0.0_r3/core/jni/android_util_AssetManager.cpp
+// transliterated from https://android.googlesource.com/platform/frameworks/base/+/android-9.0.0_r12/core/jni/android_util_AssetManager.cpp
 
 import static android.os.Build.VERSION_CODES.P;
+import static android.os.Build.VERSION_CODES.Q;
 import static org.robolectric.res.android.ApkAssetsCookie.K_INVALID_COOKIE;
 import static org.robolectric.res.android.ApkAssetsCookie.kInvalidCookie;
 import static org.robolectric.res.android.Asset.SEEK_CUR;
@@ -78,6 +79,14 @@ import org.robolectric.util.ReflectionHelpers.ClassParameter;
 @Implements(value = AssetManager.class, minSdk = Build.VERSION_CODES.P,
     shadowPicker = ShadowAssetManager.Picker.class)
 public class ShadowArscAssetManager9 extends ShadowAssetManager.ArscBase {
+
+  private static final int STYLE_NUM_ENTRIES = 6;
+  private static final int STYLE_TYPE = 0;
+  private static final int STYLE_DATA = 1;
+  private static final int STYLE_ASSET_COOKIE = 2;
+  private static final int STYLE_RESOURCE_ID = 3;
+  private static final int STYLE_CHANGING_CONFIGURATIONS = 4;
+  private static final int STYLE_DENSITY = 5;
 
   private static CppAssetManager2 systemCppAssetManager2;
   private static long systemCppAssetManager2Ref;
@@ -325,6 +334,13 @@ public class ShadowArscAssetManager9 extends ShadowAssetManager.ArscBase {
     //     break;
     // }
   }
+
+  // BEGIN-INTERNAL
+  @Implementation(minSdk = Build.VERSION_CODES.Q)
+  protected static String[] nativeCreateIdmapsForStaticOverlaysTargetingAndroid() {
+    return new String[0];
+  }
+  // END-INTERNAL
 
   static int CopyValue(/*JNIEnv* env,*/ ApkAssetsCookie cookie, Res_value value, int ref,
       int type_spec_flags, ResTable_config config, TypedValue out_typed_value) {
@@ -1497,7 +1513,7 @@ public class ShadowArscAssetManager9 extends ShadowAssetManager.ArscBase {
 
   // static void NativeThemeCopy(JNIEnv* env, jclass /*clazz*/, jlong dst_theme_ptr,
 //                             jlong src_theme_ptr) {
-  @Implementation(minSdk = P)
+  @Implementation(minSdk = P, maxSdk = P)
   protected static void nativeThemeCopy(long dst_theme_ptr, long src_theme_ptr) {
     Theme dst_theme = Registries.NATIVE_THEME9_REGISTRY.getNativeObject(dst_theme_ptr);
     Theme src_theme = Registries.NATIVE_THEME9_REGISTRY.getNativeObject(src_theme_ptr);
@@ -1505,6 +1521,33 @@ public class ShadowArscAssetManager9 extends ShadowAssetManager.ArscBase {
       throw new IllegalArgumentException("Themes are from different AssetManagers");
     }
   }
+
+  // BEGIN-INTERNAL
+  // static void NativeThemeCopy(JNIEnv* env, jclass /*clazz*/, jlong dst_asset_manager_ptr,
+  //     jlong dst_theme_ptr, jlong src_asset_manager_ptr, jlong src_theme_ptr) {
+  @Implementation(minSdk = Q)
+  protected static void nativeThemeCopy(
+      long dst_asset_manager_ptr,
+      long dst_theme_ptr,
+      long src_asset_manager_ptr,
+      long src_theme_ptr) {
+    Theme dst_theme = Registries.NATIVE_THEME9_REGISTRY.getNativeObject(dst_theme_ptr);
+    Theme src_theme = Registries.NATIVE_THEME9_REGISTRY.getNativeObject(src_theme_ptr);
+    if (dst_asset_manager_ptr != src_asset_manager_ptr) {
+      CppAssetManager2 dst_assetmanager = AssetManagerFromLong(dst_asset_manager_ptr);
+      CHECK(dst_theme.GetAssetManager() == dst_assetmanager);
+      // (void) dst_assetmanager;
+
+      CppAssetManager2 src_assetmanager = AssetManagerFromLong(src_asset_manager_ptr);
+      CHECK(src_theme.GetAssetManager() == src_assetmanager);
+      // (void) src_assetmanager;
+
+      dst_theme.SetTo(src_theme);
+    } else {
+      dst_theme.SetTo(src_theme);
+    }
+  }
+  // END-INTERNAL
 
   // static void NativeThemeClear(JNIEnv* /*env*/, jclass /*clazz*/, jlong theme_ptr) {
   @Implementation(minSdk = P)

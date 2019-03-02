@@ -2,6 +2,7 @@ package org.robolectric.android;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.lang.invoke.CallSite;
@@ -12,13 +13,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.internal.bytecode.InvokeDynamicSupport;
 import org.robolectric.shadows.ShadowSystemClock;
 import org.robolectric.util.ReflectionHelpers.ClassParameter;
 
 /** Integration tests for Android interceptors. */
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class AndroidInterceptorsIntegrationTest {
 
   @Test
@@ -56,7 +56,7 @@ public class AndroidInterceptorsIntegrationTest {
     assertThat(currentTimeMillis).isEqualTo(54321);
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
   private static <T> T invokeDynamic(
       Class<?> cls, String methodName, Class<?> returnType, ClassParameter<?>... params)
       throws Throwable {

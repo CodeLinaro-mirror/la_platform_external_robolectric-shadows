@@ -1,7 +1,7 @@
 package org.robolectric.res.android;
 
-// transliterated from https://android.googlesource.com/platform/frameworks/base/+/android-9.0.0_r3/libs/androidfw/ResourceTypes.cpp
-//   and https://android.googlesource.com/platform/frameworks/base/+/android-9.0.0_r3/include/androidfw/ResourceTypes.h
+// transliterated from https://android.googlesource.com/platform/frameworks/base/+/android-9.0.0_r12/libs/androidfw/ResourceTypes.cpp
+//   and https://android.googlesource.com/platform/frameworks/base/+/android-9.0.0_r12/include/androidfw/ResourceTypes.h
 
 import static org.robolectric.res.android.Errors.BAD_TYPE;
 import static org.robolectric.res.android.Errors.NAME_NOT_FOUND;
@@ -220,30 +220,30 @@ public class ResStringPool {
         return (mError=BAD_TYPE);
       }
 
-//      if (notDeviceEndian) {
-//        int i;
-//        uint32_t* e = final_cast<uint32_t*>(mEntries);
-//        for (i=0; i<mHeader.stringCount; i++) {
-//          e[i] = dtohl(mEntries[i]);
-//        }
-//        if (!(mHeader.flags&ResStringPool_header::UTF8_FLAG)) {
-//                final uint16_t* strings = (final uint16_t*)mStrings;
-//          uint16_t* s = final_cast<uint16_t*>(strings);
-//          for (i=0; i<mStringPoolSize; i++) {
-//            s[i] = dtohs(strings[i]);
-//          }
-//        }
-//      }
+      //      if (notDeviceEndian) {
+      //        int i;
+      //        uint32_t* e = final_cast<uint32_t*>(mEntries);
+      //        for (i=0; i<mHeader.stringCount; i++) {
+      //          e[i] = dtohl(mEntries[i]);
+      //        }
+      //        if (!(mHeader.flags&ResStringPool_header::UTF8_FLAG)) {
+      //                final uint16_t* strings = (final uint16_t*)mStrings;
+      //          uint16_t* s = final_cast<uint16_t*>(strings);
+      //          for (i=0; i<mStringPoolSize; i++) {
+      //            s[i] = dtohs(strings[i]);
+      //          }
+      //        }
+      //      }
 
-//      if ((mHeader->flags&ResStringPool_header::UTF8_FLAG &&
-//          ((uint8_t*)mStrings)[mStringPoolSize-1] != 0) ||
-//      (!(mHeader->flags&ResStringPool_header::UTF8_FLAG) &&
-//          ((uint16_t*)mStrings)[mStringPoolSize-1] != 0)) {
+      //      if ((mHeader->flags&ResStringPool_header::UTF8_FLAG &&
+      //          ((uint8_t*)mStrings)[mStringPoolSize-1] != 0) ||
+      //      (!(mHeader->flags&ResStringPool_header::UTF8_FLAG) &&
+      //          ((uint16_t*)mStrings)[mStringPoolSize-1] != 0)) {
 
-      if (isTruthy(mHeader.flags&ResStringPool_header.UTF8_FLAG) &&
-          (mHeader.getByte(mStrings + mStringPoolSize-1) != 0) ||
-      (!isTruthy(mHeader.flags&ResStringPool_header.UTF8_FLAG) &&
-          ((mHeader.getShort(mStrings + mStringPoolSize*2-2) != 0)))) {
+      if ((isTruthy(mHeader.flags & ResStringPool_header.UTF8_FLAG)
+              && (mHeader.getByte(mStrings + mStringPoolSize - 1) != 0))
+          || (!isTruthy(mHeader.flags & ResStringPool_header.UTF8_FLAG)
+              && (mHeader.getShort(mStrings + mStringPoolSize * 2 - 2) != 0))) {
         ALOGW("Bad string block: last string is not 0-terminated\n");
         return (mError=BAD_TYPE);
       }

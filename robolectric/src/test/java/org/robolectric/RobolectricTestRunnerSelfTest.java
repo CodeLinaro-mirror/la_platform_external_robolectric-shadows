@@ -6,6 +6,8 @@ import static org.junit.Assert.fail;
 import android.app.Application;
 import android.content.res.Resources;
 import android.os.Build;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import org.hamcrest.CoreMatchers;
 import org.junit.AfterClass;
 import org.junit.Test;
@@ -13,15 +15,18 @@ import org.junit.runner.RunWith;
 import org.robolectric.annotation.Config;
 import org.robolectric.util.ReflectionHelpers;
 
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 @Config(application = RobolectricTestRunnerSelfTest.MyTestApplication.class)
 public class RobolectricTestRunnerSelfTest {
 
   @Test
   public void shouldInitializeAndBindApplicationButNotCallOnCreate() {
-    assertThat(RuntimeEnvironment.application).named("application")
+    assertThat((Application) ApplicationProvider.getApplicationContext())
+        .named("application")
         .isInstanceOf(MyTestApplication.class);
-    assertThat(((MyTestApplication) RuntimeEnvironment.application).onCreateWasCalled).named("onCreate called").isTrue();
+    assertThat(((MyTestApplication) ApplicationProvider.getApplicationContext()).onCreateWasCalled)
+        .named("onCreate called")
+        .isTrue();
     if (RuntimeEnvironment.useLegacyResources()) {
       assertThat(RuntimeEnvironment.getAppResourceTable())
           .named("Application resource loader")
@@ -32,7 +37,7 @@ public class RobolectricTestRunnerSelfTest {
   @Test
   public void shouldSetUpSystemResources() {
     Resources systemResources = Resources.getSystem();
-    Resources appResources = RuntimeEnvironment.application.getResources();
+    Resources appResources = ApplicationProvider.getApplicationContext().getResources();
 
     assertThat(systemResources).named("system resources").isNotNull();
 
@@ -40,7 +45,7 @@ public class RobolectricTestRunnerSelfTest {
         .isEqualTo(appResources.getString(android.R.string.copy));
 
     assertThat(appResources.getString(R.string.howdy)).named("app resource")
-        .isNotNull();
+      .isNotNull();
     try {
       systemResources.getString(R.string.howdy);
       fail("Expected Exception not thrown");
@@ -97,7 +102,7 @@ public class RobolectricTestRunnerSelfTest {
     public void onCreate() {
       this.onCreateWasCalled = true;
     }
-
+    
     @Override
     public void onTerminate() {
       onTerminateCalledFromMain = Boolean.valueOf(RuntimeEnvironment.isMainThread());

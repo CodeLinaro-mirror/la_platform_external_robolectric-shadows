@@ -76,8 +76,8 @@ import javax.annotation.Nonnull;
  * Describes a particular resource configuration.
  *
  * Transliterated from:
- * * https://android.googlesource.com/platform/frameworks/base/+/android-9.0.0_r3/libs/androidfw/ResourceTypes.cpp
- * * https://android.googlesource.com/platform/frameworks/base/+/android-9.0.0_r3/libs/androidfw/include/ResourceTypes.h (struct ResTable_config)
+ * * https://android.googlesource.com/platform/frameworks/base/+/android-9.0.0_r12/libs/androidfw/ResourceTypes.cpp
+ * * https://android.googlesource.com/platform/frameworks/base/+/android-9.0.0_r12/libs/androidfw/include/ResourceTypes.h (struct ResTable_config)
  *
  * Changes from 8.0.0_r4 partially applied.
  */
@@ -1706,6 +1706,8 @@ public class ResTable_config {
         // Replace Tagalog with Filipino if we are canonicalizing
         str.setLength(0);
         str.append("fil");// 3-letter code for Filipino
+      } else {
+        str.append(unpackLanguage());
       }
     }
 
@@ -1740,7 +1742,7 @@ public class ResTable_config {
     if (localeNumberingSystem[0] != '\0' && str.length() > 0) {
       String NU_PREFIX = "-u-nu-";
       str.append(NU_PREFIX);
-      str.append(new String(localeNumberingSystem));
+      str.append(new String(localeNumberingSystem, UTF_8));
     }
 
     return str.toString();

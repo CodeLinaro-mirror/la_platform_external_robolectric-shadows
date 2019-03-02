@@ -26,7 +26,7 @@ import org.robolectric.shadow.api.Shadow;
 import org.robolectric.util.ReflectionHelpers;
 import org.robolectric.util.ReflectionHelpers.ClassParameter;
 
-// transliterated from https://android.googlesource.com/platform/frameworks/base/+/android-9.0.0_r8/core/jni/android/graphics/ImageDecoder.cpp
+// transliterated from https://android.googlesource.com/platform/frameworks/base/+/android-9.0.0_r12/core/jni/android/graphics/ImageDecoder.cpp
 @SuppressWarnings({"NewApi", "UnusedDeclaration"})
 // ImageDecoder is in fact in SDK, but make it false for now so projects which compile against < P
 // still work
@@ -281,7 +281,7 @@ public class ShadowImageDecoder {
     return ImageDecoder_nCreateFd(fd, src);
   }
 
-  @Implementation
+  @Implementation(maxSdk = Build.VERSION_CODES.P)
   protected static Bitmap nDecodeBitmap(long nativePtr,
       ImageDecoder decoder,
       boolean doPostProcess,
@@ -300,6 +300,28 @@ public class ShadowImageDecoder {
         conserveMemory, decodeAsAlphaMask,
         desiredColorSpace);
   }
+
+  // BEGIN-INTERNAL
+  @Implementation(minSdk = Build.VERSION_CODES.Q)
+  protected static Bitmap nDecodeBitmap(long nativePtr,
+      ImageDecoder decoder,
+      boolean doPostProcess,
+      int width, int height,
+      android.graphics.Rect cropRect, boolean mutable,
+      int allocator, boolean unpremulRequired,
+      boolean conserveMemory, boolean decodeAsAlphaMask,
+      long colorSpacePtr)
+      throws IOException {
+    return ImageDecoder_nDecodeBitmap(nativePtr,
+        decoder,
+        doPostProcess,
+        width, height,
+        cropRect, mutable,
+        allocator, unpremulRequired,
+        conserveMemory, decodeAsAlphaMask,
+        null);
+  }
+  // END-INTERNAL
 
   @Implementation
   protected static Size nGetSampledSize(long nativePtr,

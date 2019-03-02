@@ -12,23 +12,23 @@ import static org.junit.Assert.fail;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.Manifest.permission;
+import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Process;
 import android.os.UserHandle;
 import android.os.UserManager;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowUserManager.UserState;
 
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class ShadowUserManagerTest {
 
   private UserManager userManager;
@@ -36,7 +36,7 @@ public class ShadowUserManagerTest {
 
   @Before
   public void setUp() {
-    context = RuntimeEnvironment.application;
+    context = ApplicationProvider.getApplicationContext();
     userManager = (UserManager) context.getSystemService(Context.USER_SERVICE);
   }
 
@@ -61,7 +61,11 @@ public class ShadowUserManagerTest {
     restrictions.putCharSequence("test_key", "test_value");
     shadowOf(userManager).setApplicationRestrictions(packageName, restrictions);
 
-    assertThat(userManager.getApplicationRestrictions(packageName).getCharSequence("test_key"))
+    assertThat(
+            userManager
+                .getApplicationRestrictions(packageName)
+                .getCharSequence("test_key")
+                .toString())
         .isEqualTo("test_value");
   }
 
@@ -136,11 +140,11 @@ public class ShadowUserManagerTest {
       fail("Expected exception");
     } catch (SecurityException expected) {}
 
-    PackageInfo packageInfo = RuntimeEnvironment.application.getPackageManager()
-        .getPackageInfo(RuntimeEnvironment.application.getPackageName(),
-            PackageManager.GET_PERMISSIONS);
-    packageInfo.requestedPermissions = new String[] { permission.MANAGE_USERS };
-
+    Application context = ApplicationProvider.getApplicationContext();
+    PackageInfo packageInfo =
+        shadowOf(context.getPackageManager())
+            .getInternalMutablePackageInfo(context.getPackageName());
+    packageInfo.requestedPermissions = new String[] {permission.MANAGE_USERS};
     shadowOf(userManager).setManagedProfile(true);
 
     assertThat(userManager.isManagedProfile()).isTrue();
@@ -170,19 +174,6 @@ public class ShadowUserManagerTest {
 
     shadowOf(userManager).setIsDemoUser(false);
     assertThat(userManager.isDemoUser()).isFalse();
-  }
-
-  @Test
-  @Config(minSdk = N_MR1)
-  public void isAdminUser() {
-    // All methods are based on the current user, so no need to pass a UserHandle.
-    assertThat(userManager.isAdminUser()).isFalse();
-
-    shadowOf(userManager).setIsAdminUser(true);
-    assertThat(userManager.isAdminUser()).isTrue();
-
-    shadowOf(userManager).setIsAdminUser(false);
-    assertThat(userManager.isAdminUser()).isFalse();
   }
 
   @Test
@@ -283,6 +274,65 @@ public class ShadowUserManagerTest {
 
     shadowOf(userManager).setUserState(userHandle, UserState.STATE_SHUTDOWN);
     assertThat(userManager.isUserRunningOrStopping(userHandle)).isFalse();
+  }
+
+  @Test
+  @Config(minSdk = JELLY_BEAN_MR1)
+  public void addSecondaryUser() {
+    assertThat(userManager.getUserCount()).isEqualTo(1);
+    shadowOf(userManager).addUser(10, "secondary_user", 0);
+    assertThat(userManager.getUserCount()).isEqualTo(2);
+  }
+
+  @Test
+  @Config(minSdk = JELLY_BEAN_MR1)
+  public void removeSecondaryUser() {
+    shadowOf(userManager).addUser(10, "secondary_user", 0);
+    assertThat(shadowOf(userManager).removeUser(10)).isTrue();
+    assertThat(userManager.getUserCount()).isEqualTo(1);
+  }
+
+  @Test
+  @Config(minSdk = JELLY_BEAN_MR1)
+  public void switchToSecondaryUser() {
+    shadowOf(userManager).addUser(10, "secondary_user", 0);
+    shadowOf(userManager).switchUser(10);
+    assertThat(UserHandle.myUserId()).isEqualTo(10);
+  }
+
+  @Test
+  @Config(minSdk = N)
+  public void canSwitchUser() {
+    assertThat(shadowOf(userManager).canSwitchUsers()).isFalse();
+    shadowOf(userManager).setCanSwitchUser(true);
+    assertThat(shadowOf(userManager).canSwitchUsers()).isTrue();
+  }
+
+  @Test
+  @Config(minSdk = JELLY_BEAN_MR1)
+  public void getUsers() {
+    assertThat(userManager.getUsers()).hasSize(1);
+    shadowOf(userManager).addUser(10, "secondary_user", 0);
+    assertThat(userManager.getUsers()).hasSize(2);
+  }
+
+  @Test
+  @Config(minSdk = JELLY_BEAN_MR1)
+  public void getUserInfo() {
+    shadowOf(userManager).addUser(10, "secondary_user", 0);
+    assertThat(userManager.getUserInfo(10)).isNotNull();
+    assertThat(userManager.getUserInfo(10).name).isEqualTo("secondary_user");
+  }
+
+  @Test
+  @Config(minSdk = N)
+  public void switchToUserNotAddedShouldThrowException() {
+    try {
+      shadowOf(userManager).switchUser(10);
+      fail("Switching to the user that was never added should throw UnsupportedOperationException");
+    } catch (UnsupportedOperationException e) {
+      assertThat(e).hasMessageThat().isEqualTo("Must add user before switching to it");
+    }
   }
 
   // Create user handle from parcel since UserHandle.of() was only added in later APIs.

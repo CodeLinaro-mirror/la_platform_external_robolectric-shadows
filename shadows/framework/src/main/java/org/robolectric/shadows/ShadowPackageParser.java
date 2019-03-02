@@ -9,16 +9,24 @@ import android.util.DisplayMetrics;
 import java.io.File;
 import java.util.List;
 import org.robolectric.RuntimeEnvironment;
+import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
+import org.robolectric.annotation.RealObject;
 import org.robolectric.res.FsFile;
 import org.robolectric.shadows.ShadowLog.LogItem;
 import org.robolectric.util.ReflectionHelpers;
 
-/**
- * Shadow for {@link PackageParser}
- */
 @Implements(value = PackageParser.class, isInAndroidSdk = false)
 public class ShadowPackageParser {
+
+  @RealObject private PackageParser realObject;
+
+  @Implementation
+  protected void __constructor__() {
+    if (RuntimeEnvironment.getApiLevel() >= Build.VERSION_CODES.O) {
+      realObject.setCallback(new Callback());
+    }
+  }
 
   /** Parses an AndroidManifest.xml file using the framework PackageParser. */
   public static Package callParsePackage(FsFile apkFile) {
@@ -55,6 +63,24 @@ public class ShadowPackageParser {
       return thePackage;
     } catch (Exception e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  private static class Callback implements PackageParser.Callback {
+
+    @Override
+    public boolean hasFeature(String feature) {
+      return false;
+    }
+
+    @Override
+    public String[] getOverlayPaths(String targetPackageName, String targetPath) {
+      return null;
+    }
+
+    @Override
+    public String[] getOverlayApks(String targetPackageName) {
+      return null;
     }
   }
 }

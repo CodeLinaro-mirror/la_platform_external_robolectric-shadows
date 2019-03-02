@@ -1,9 +1,12 @@
 package org.robolectric.shadows;
 
+import static android.os.Build.VERSION_CODES.Q;
 import static android.os.Build.VERSION_CODES.M;
 import static android.os.Build.VERSION_CODES.N;
 import static android.os.Build.VERSION_CODES.N_MR1;
 import static org.robolectric.RuntimeEnvironment.application;
+import static org.robolectric.util.ReflectionHelpers.ClassParameter.from;
+import static org.robolectric.util.ReflectionHelpers.callConstructor;
 
 import android.content.Intent;
 import android.hardware.usb.UsbAccessory;
@@ -22,11 +25,14 @@ import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.HiddenApi;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
+import org.robolectric.annotation.RealObject;
 
 /** Robolectric implementation of {@link android.hardware.usb.UsbManager}. */
 @Implements(value = UsbManager.class, looseSignatures = true)
 public class ShadowUsbManager {
-  /**
+  @RealObject private UsbManager realUsbManager;
+
+    /**
    * A mapping from the package names to a list of USB devices for which permissions are granted.
    */
   private final HashMap<String, List<UsbDevice>> grantedPermissions = new HashMap<>();
@@ -133,8 +139,12 @@ public class ShadowUsbManager {
 
   @Implementation(minSdk = M)
   @HiddenApi
-  protected /* UsbPort[] */ Object[] getPorts() {
-    return usbPorts.keySet().toArray(new UsbPort[usbPorts.size()]);
+  protected /* UsbPort[] / List<UsbPort> */ Object getPorts() {
+    if (RuntimeEnvironment.getApiLevel() >= Q) {
+      return new ArrayList<>(usbPorts.keySet());
+    } else {
+      return usbPorts.keySet().toArray(new UsbPort[usbPorts.size()]);
+    }
   }
 
   /** Remove all added ports from UsbManager. */
@@ -144,9 +154,26 @@ public class ShadowUsbManager {
 
   /** Adds a USB port to UsbManager. */
   public void addPort(String portId) {
-    usbPorts.put(
-        new UsbPort(portId, UsbPort.MODE_DUAL),
-        new UsbPortStatus(UsbPort.MODE_DUAL, UsbPort.POWER_ROLE_SINK, UsbPort.DATA_ROLE_DEVICE, 0));
+    UsbPort usbPort;
+
+    if (RuntimeEnvironment.getApiLevel() >= Q) {
+      usbPort = new UsbPort(realUsbManager, portId, UsbPortStatus.MODE_DUAL,
+          UsbPortStatus.CONTAMINANT_PROTECTION_NONE, false, false);
+      usbPorts.put(
+          usbPort,
+          new UsbPortStatus(UsbPortStatus.MODE_DUAL, UsbPortStatus.POWER_ROLE_SINK,
+          UsbPortStatus.DATA_ROLE_DEVICE, 0, UsbPortStatus.CONTAMINANT_PROTECTION_NONE,
+          UsbPortStatus.CONTAMINANT_DETECTION_NOT_SUPPORTED));
+    } else {
+      usbPort = callConstructor(UsbPort.class, from(String.class, portId),
+          from(Integer.TYPE, UsbPortStatus.MODE_DUAL));
+      usbPorts.put(usbPort,
+          callConstructor(UsbPortStatus.class,
+          from(Integer.TYPE, UsbPortStatus.MODE_DUAL),
+          from(Integer.TYPE, UsbPortStatus.POWER_ROLE_SINK),
+          from(Integer.TYPE, UsbPortStatus.DATA_ROLE_DEVICE),
+          from(Integer.TYPE, 0)));
+    }
   }
 
   @Implementation(minSdk = M)
@@ -160,13 +187,25 @@ public class ShadowUsbManager {
   protected void setPortRoles(
       /* UsbPort */ Object port, /* int */ Object powerRole, /* int */ Object dataRole) {
     UsbPortStatus status = usbPorts.get(port);
-    usbPorts.put(
-        (UsbPort) port,
-        new UsbPortStatus(
-            status.getCurrentMode(),
-            (int) powerRole,
-            (int) dataRole,
-            status.getSupportedRoleCombinations()));
+    if (RuntimeEnvironment.getApiLevel() >= Q) {
+      usbPorts.put(
+          (UsbPort) port,
+          new UsbPortStatus(
+              status.getCurrentMode(),
+              (int) powerRole,
+              (int) dataRole,
+              status.getSupportedRoleCombinations(),
+              UsbPortStatus.CONTAMINANT_PROTECTION_NONE,
+              UsbPortStatus.CONTAMINANT_DETECTION_NOT_SUPPORTED));
+    } else {
+      usbPorts.put(
+          (UsbPort) port,
+          callConstructor(UsbPortStatus.class,
+              from(Integer.TYPE, status.getCurrentMode()),
+              from(Integer.TYPE, (int) powerRole),
+              from(Integer.TYPE, (int) dataRole),
+              from(Integer.TYPE, status.getSupportedRoleCombinations())));
+    }
     application.sendBroadcast(new Intent(UsbManager.ACTION_USB_PORT_CHANGED));
   }
 

@@ -14,6 +14,9 @@ import static android.os.Build.VERSION_CODES.LOLLIPOP;
 import static android.os.Build.VERSION_CODES.M;
 import static android.os.Build.VERSION_CODES.N;
 import static android.os.Build.VERSION_CODES.O;
+// BEGIN-INTERNAL
+import static android.os.Build.VERSION_CODES.Q;
+// END-INTERNAL
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 import static org.robolectric.Shadows.shadowOf;
@@ -25,18 +28,23 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Bundle;
 import android.os.UserManager;
+import android.util.ArraySet;
+
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 /** Unit tests for {@link ShadowDevicePolicyManager}. */
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public final class ShadowDevicePolicyManagerTest {
 
   private DevicePolicyManager devicePolicyManager;
@@ -46,16 +54,15 @@ public final class ShadowDevicePolicyManagerTest {
 
   @Before
   public void setUp() {
+    Context context = ApplicationProvider.getApplicationContext();
     devicePolicyManager =
-        (DevicePolicyManager)
-            RuntimeEnvironment.application.getSystemService(Context.DEVICE_POLICY_SERVICE);
+        (DevicePolicyManager) context.getSystemService(Context.DEVICE_POLICY_SERVICE);
 
-    userManager =
-        (UserManager) RuntimeEnvironment.application.getSystemService(Context.USER_SERVICE);
+    userManager = (UserManager) context.getSystemService(Context.USER_SERVICE);
 
     testComponent = new ComponentName("com.example.app", "DeviceAdminReceiver");
 
-    packageManager = RuntimeEnvironment.application.getPackageManager();
+    packageManager = context.getPackageManager();
   }
 
   @Test
@@ -111,6 +118,25 @@ public final class ShadowDevicePolicyManagerTest {
     // WHEN DevicePolicyManager#getProfileOwner is called without a device owner
     // THEN the method should return null
     assertThat(devicePolicyManager.getDeviceOwner()).isNull();
+  }
+
+  @Test
+  @Config(minSdk = N)
+  public void isDeviceManagedShouldReturnTrueWhenThereIsADeviceOwner() {
+    // GIVEN a test component is the device owner app of the device
+    shadowOf(devicePolicyManager).setDeviceOwner(testComponent);
+
+    // WHEN DevicePolicyManager#isDeviceManaged is called
+    // THEN the method should return true
+    assertThat(devicePolicyManager.isDeviceManaged()).isTrue();
+  }
+
+  @Test
+  @Config(minSdk = N)
+  public void isDeviceManagedShouldReturnFalseWhenThereIsNoDeviceOwner() {
+    // WHEN DevicePolicyManager#isDeviceManaged is called without a device owner
+    // THEN the method should return false
+    assertThat(devicePolicyManager.isDeviceManaged()).isFalse();
   }
 
   @Test
@@ -576,7 +602,8 @@ public final class ShadowDevicePolicyManagerTest {
     devicePolicyManager.setOrganizationName(testComponent, organizationName);
 
     // THEN the name should be set properly
-    assertThat(devicePolicyManager.getOrganizationName(testComponent)).isEqualTo(organizationName);
+    assertThat(devicePolicyManager.getOrganizationName(testComponent).toString())
+        .isEqualTo(organizationName);
   }
 
   @Test
@@ -623,7 +650,8 @@ public final class ShadowDevicePolicyManagerTest {
     devicePolicyManager.setOrganizationName(testComponent, organizationName);
 
     // THEN the name should be set properly
-    assertThat(devicePolicyManager.getOrganizationName(testComponent)).isEqualTo(organizationName);
+    assertThat(devicePolicyManager.getOrganizationName(testComponent).toString())
+        .isEqualTo(organizationName);
   }
 
   @Test
@@ -892,8 +920,8 @@ public final class ShadowDevicePolicyManagerTest {
     shadowOf(packageManager).addPackage("package");
 
     assertThat(
-        devicePolicyManager.setPackagesSuspended(
-            testComponent, new String[] {"package"}, false))
+            devicePolicyManager.setPackagesSuspended(
+                testComponent, new String[] {"package"}, false))
         .isEmpty();
     assertThat(devicePolicyManager.isPackageSuspended(testComponent, "package")).isFalse();
   }
@@ -957,5 +985,40 @@ public final class ShadowDevicePolicyManagerTest {
 
     shadowOf(devicePolicyManager).setUserProvisioningState(STATE_USER_UNMANAGED);
     assertThat(devicePolicyManager.getUserProvisioningState()).isEqualTo(STATE_USER_UNMANAGED);
+  }
+
+  @Test
+  @Config(minSdk = LOLLIPOP)
+  public void getProfileOwnerNameAsUser() {
+    int userId = 0;
+    String orgName = "organization";
+    assertThat(devicePolicyManager.getProfileOwnerNameAsUser(userId)).isNull();
+
+    shadowOf(devicePolicyManager).setProfileOwnerName(userId, orgName);
+
+    assertThat(devicePolicyManager.getProfileOwnerNameAsUser(userId)).isEqualTo(orgName);
+  }
+
+  // BEGIN-INTERNAL
+  @Test
+  @Config(minSdk = Q)
+  public void setAndGetCrossProfileCalendarPackages() {
+      final String testPackageName = "testPackage";
+      shadowOf(devicePolicyManager).setProfileOwner(testComponent);
+      devicePolicyManager.setCrossProfileCalendarPackages(testComponent,
+              Collections.singleton(testPackageName));
+      final Set<String> packages = devicePolicyManager.getCrossProfileCalendarPackages(
+              testComponent);
+      assertThat(packages.size()).isEqualTo(1);
+      assertThat(packages.toArray()[0]).isEqualTo(testPackageName);
+  }
+  // END-INTERNAL
+
+  @Test
+  @Config(minSdk = LOLLIPOP)
+  public void getProfileOwnerAsUser() {
+      shadowOf(devicePolicyManager).setProfileOwner(testComponent);
+      final ComponentName admin = devicePolicyManager.getProfileOwnerAsUser(1);
+      assertThat(admin).isEqualTo(testComponent);
   }
 }
