@@ -10,6 +10,7 @@ import static android.os.Build.VERSION_CODES.O;
 import static android.os.Build.VERSION_CODES.P;
 import static android.os.Build.VERSION_CODES.Q;
 import static android.os.Build.VERSION_CODES.R;
+import static android.os.Build.VERSION_CODES.S;
 
 import android.accounts.IAccountManager;
 import android.app.IAlarmManager;
@@ -17,7 +18,6 @@ import android.app.INotificationManager;
 import android.app.ISearchManager;
 import android.app.admin.IDevicePolicyManager;
 import android.app.job.IJobScheduler;
-import android.app.role.IRoleManager;
 import android.app.slice.ISliceManager;
 import android.app.trust.ITrustManager;
 import android.app.usage.IUsageStatsManager;
@@ -52,6 +52,7 @@ import android.os.IUserManager;
 import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.os.storage.IStorageManager;
+import android.permission.IPermissionManager;
 import android.service.persistentdata.IPersistentDataBlockService;
 
 import com.android.internal.app.IAppOpsService;
@@ -205,14 +206,16 @@ public class ShadowServiceManager {
           createBinder(INotificationManager.class, "android.app.INotificationManager"));
       map.put(Context.COLOR_DISPLAY_SERVICE, createBinder(IColorDisplayManager.class,
           "android.hardware.display.ColorDisplayManager"));
-      map.put(Context.ROLE_SERVICE,
-              createBinder(IRoleManager.class, "android.app.role.IRoleManager"));
     }
     if (RuntimeEnvironment.getApiLevel() >= R) {
       map.put(Context.TETHERING_SERVICE,
               createBinder(ITetheringConnector.class, "android.net.ITetheringConnector"));
       map.put(Context.THERMAL_SERVICE,
               createBinder(IThermalService.class, "android.os.IThermalService"));
+    }
+    if (RuntimeEnvironment.getApiLevel() >= S) {
+      map.put("permissionmgr",
+              createBinder(IPermissionManager.class, "android.permission.IPermissionManager"));
     }
     // END-INTERNAL
     SERVICES = Collections.unmodifiableMap(map);
