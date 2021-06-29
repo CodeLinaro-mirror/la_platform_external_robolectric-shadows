@@ -119,11 +119,6 @@ public class ShadowUserManager {
     return ImmutableList.copyOf(userProfiles.keySet());
   }
 
-  @Implementation
-  public List<UserHandle> getAllProfiles() {
-    return getUserProfiles();
-  }
-
   /**
    * If any profiles have been added using {@link #addProfile}, return those profiles.
    *
