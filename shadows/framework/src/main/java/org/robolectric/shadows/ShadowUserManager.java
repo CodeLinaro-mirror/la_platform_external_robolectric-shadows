@@ -66,6 +66,10 @@ public class ShadowUserManager {
   private boolean userUnlocked = true;
   private boolean managedProfile = false;
   private boolean isSystemUser = true;
+  private static boolean isHeadlessSystemUserMode = false;
+  private static boolean isMultipleAdminEnabled = false;
+
+
   private Map<Integer, Bundle> userRestrictions = new HashMap<>();
   private BiMap<UserHandle, Long> userProfiles = HashBiMap.create();
   private Map<String, Bundle> applicationRestrictions = new HashMap<>();
@@ -342,6 +346,24 @@ public class ShadowUserManager {
 
   private boolean hasManageUsersPermission() {
     return context.getPackageManager().checkPermission(permission.MANAGE_USERS, context.getPackageName()) == PackageManager.PERMISSION_GRANTED;
+  }
+
+  public static void setIsMultipleAdminEnabled(boolean enableMultipleAdmin) {
+    isMultipleAdminEnabled = enableMultipleAdmin;
+  }
+
+  @Implementation(minSdk = UPSIDE_DOWN_CAKE)
+  protected static boolean isMultipleAdminEnabled() {
+    return isMultipleAdminEnabled;
+  }
+
+  public static void setIsHeadlessSystemUserMode(boolean isHSUM) {
+    isHeadlessSystemUserMode = isHSUM;
+  }
+
+  @Implementation
+  protected static boolean isHeadlessSystemUserMode() {
+      return isHeadlessSystemUserMode;
   }
 
   private void checkPermissions() {
@@ -639,6 +661,7 @@ public class ShadowUserManager {
       userPidMap.clear();
       userPidMap.put(UserHandle.USER_SYSTEM, Process.myUid());
     }
+    isMultipleAdminEnabled = false;
   }
 
   public void setupUserProperty(int userId, int showInSettings) {
